@@ -17,6 +17,7 @@ then open http://127.0.0.1:5000
 
 import csv
 import os
+import random
 import time
 from datetime import datetime
 from pathlib import Path
@@ -33,6 +34,11 @@ INDEX_FILE = "index.html"
 FIELDS = ["business_name", "email", "url", "instagram", "facebook",
           "note", "status", "contacted_at"]
 MAX_URLS_PER_BATCH = 40
+
+# When sending a whole batch live, pause an irregular amount between each email
+# (a few seconds to a few minutes) so a run doesn't look like a spam blast.
+BATCH_MIN_DELAY_SECONDS = 20
+BATCH_MAX_DELAY_SECONDS = 120
 
 app = Flask(__name__)
 _service = None  # lazily-created Gmail API service (auth only when first needed)
@@ -259,7 +265,9 @@ def api_draft_all():
             r["contacted_at"] = datetime.now().isoformat(timespec="seconds")
             done += 1
             if send and i < len(targets) - 1:
-                time.sleep(1.0)  # light courtesy gap between live sends
+                # Irregular gap so a batch doesn't look like a spam blast.
+                time.sleep(random.uniform(BATCH_MIN_DELAY_SECONDS,
+                                          BATCH_MAX_DELAY_SECONDS))
         except Exception as e:  # noqa: BLE001
             errors.append({"email": r["email"], "error": str(e)})
     save_contacts(rows)
