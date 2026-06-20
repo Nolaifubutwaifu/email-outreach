@@ -54,8 +54,10 @@ Then open **http://127.0.0.1:5050** (set `PORT=8000` etc. to change the port).
   business's name, email, Instagram and Facebook. Review/edit the results, then add
   them to your list.
 - **Bulk paste / Single** — add contacts from `Name, email` lines or one at a time.
-- **Create draft** — one click puts a ready-to-send email in your **Gmail Drafts**
-  for you to review and send. Nothing sends automatically.
+- **Create draft (or send)** — one click puts a ready-to-send email in your
+  **Gmail Drafts** to review. Flip the **Draft / Send** toggle to send immediately
+  instead — drafts are the default and safer. Works per-business or for the whole
+  "to send" list at once.
 - **Tracking** — everything is saved to `contacts.csv` with a status
   (*To send / Drafted / Sent / Replied*) and the time a draft was created. Re-adding
   the same email is skipped, so your list never doubles up.

@@ -17,6 +17,7 @@ then open http://127.0.0.1:5000
 
 import csv
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -215,16 +216,21 @@ def api_delete():
 @app.post("/api/draft")
 def api_draft():
     d = request.get_json(force=True) or {}
+    send = bool(d.get("send"))
     rows = load_contacts()
     r = find(rows, d.get("email"))
     if not r:
         return jsonify({"error": "not found"}), 404
     subject, body = load_template()
     try:
-        gmail_client.create_draft(gmail(), r["email"], subject, body)
+        svc = gmail()
+        if send:
+            gmail_client.send_message(svc, r["email"], subject, body)
+        else:
+            gmail_client.create_draft(svc, r["email"], subject, body)
     except Exception as e:  # noqa: BLE001 - surface to the UI
         return jsonify({"error": str(e)}), 500
-    r["status"] = "drafted"
+    r["status"] = "sent" if send else "drafted"
     r["contacted_at"] = datetime.now().isoformat(timespec="seconds")
     save_contacts(rows)
     return jsonify({"ok": True, "contact": r})
@@ -232,25 +238,32 @@ def api_draft():
 
 @app.post("/api/draft-all")
 def api_draft_all():
+    d = request.get_json(force=True) or {}
+    send = bool(d.get("send"))
     rows = load_contacts()
     subject, body = load_template()
-    created, errors = 0, []
+    done, errors = 0, []
     try:
         svc = gmail()
     except Exception as e:  # noqa: BLE001
         return jsonify({"error": str(e)}), 500
-    for r in rows:
-        if r.get("status") != "to_send" or not r.get("email"):
-            continue
+    targets = [r for r in rows if r.get("status") == "to_send" and r.get("email")]
+    for i, r in enumerate(targets):
         try:
-            gmail_client.create_draft(svc, r["email"], subject, body)
-            r["status"] = "drafted"
+            if send:
+                gmail_client.send_message(svc, r["email"], subject, body)
+                r["status"] = "sent"
+            else:
+                gmail_client.create_draft(svc, r["email"], subject, body)
+                r["status"] = "drafted"
             r["contacted_at"] = datetime.now().isoformat(timespec="seconds")
-            created += 1
+            done += 1
+            if send and i < len(targets) - 1:
+                time.sleep(1.0)  # light courtesy gap between live sends
         except Exception as e:  # noqa: BLE001
             errors.append({"email": r["email"], "error": str(e)})
     save_contacts(rows)
-    return jsonify({"created": created, "errors": errors, "contacts": rows})
+    return jsonify({"done": done, "errors": errors, "contacts": rows})
 
 
 if __name__ == "__main__":

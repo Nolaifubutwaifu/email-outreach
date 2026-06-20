@@ -63,3 +63,19 @@ def create_draft(service, to_addr, subject, body):
         userId="me", body={"message": {"raw": raw}}
     ).execute()
     return draft.get("id", "")
+
+
+def send_message(service, to_addr, subject, body):
+    """Send an email immediately and return the sent message id.
+
+    Works with the gmail.compose scope (which already covers sending), so no
+    extra authorisation is needed beyond what draft creation uses.
+    """
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["to"] = to_addr
+    msg["subject"] = subject
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    sent = service.users().messages().send(
+        userId="me", body={"raw": raw}
+    ).execute()
+    return sent.get("id", "")

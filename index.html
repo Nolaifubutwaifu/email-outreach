@@ -59,11 +59,10 @@
           <input id="findArea" placeholder="Area — e.g. Saint Lucia, Brisbane" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
         </div>
         <div class="flex items-center gap-2 mt-2">
-          <select id="findMax" class="border border-slate-200 rounded-lg px-2 py-2 text-sm">
-            <option value="20">20 results</option>
-            <option value="40">40 results</option>
-            <option value="60">60 results</option>
-          </select>
+          <input id="findMax" type="number" min="1" max="60" step="1" value="20"
+            title="How many businesses to fetch (max 60 per search)"
+            class="w-20 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          <span class="text-xs text-slate-500 shrink-0">results <span class="text-slate-400">(max 60)</span></span>
           <button id="findBizBtn" class="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">🔍 Find businesses</button>
         </div>
         <p class="text-xs text-slate-400 mt-2">Finds businesses and their websites via Google Places, then scrapes each site for the email. Needs your Places API key (see README). Can take ~10–30s for a batch.</p>
@@ -100,6 +99,21 @@
     <!-- Scraped / found results (shared by Find businesses + From websites) -->
     <div id="scrapeOut" class="mb-4"></div>
 
+    <!-- Draft / Send mode toggle -->
+    <div class="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-3">
+      <div class="min-w-0 pr-3">
+        <div class="text-sm font-medium text-slate-700">Action mode</div>
+        <div id="modeHint" class="text-xs mt-0.5 text-slate-400">Draft mode — creates a Gmail draft for you to review before sending.</div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-xs text-slate-500">Draft</span>
+        <button id="sendToggle" type="button" role="switch" aria-checked="false" class="relative w-12 h-7 rounded-full bg-slate-300 transition shrink-0">
+          <span id="sendKnob" class="absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow transition"></span>
+        </button>
+        <span class="text-xs text-slate-500">Send</span>
+      </div>
+    </div>
+
     <!-- Bulk actions -->
     <div class="flex items-center justify-between mb-2">
       <button id="draftAll" class="text-xs bg-slate-900 text-white px-3 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50">
@@ -127,6 +141,7 @@ const STATUS = {
 
 let contacts = [];
 let scraped = [];
+let sendMode = false;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => (s || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -154,8 +169,11 @@ function renderStats() {
        <div class="text-xs text-slate-500 mt-1">${l}</div>
      </div>`).join("");
   const n = c.to_send;
-  $("draftAll").textContent = `Create drafts for all "to send"` + (n ? ` (${n})` : "");
-  $("draftAll").disabled = n === 0;
+  const da = $("draftAll");
+  da.textContent = (sendMode ? "Send to all to-send" : "Create drafts for all to-send") + (n ? ` (${n})` : "");
+  da.className = "text-xs px-3 py-2 rounded-lg disabled:opacity-50 " +
+    (sendMode ? "bg-red-600 text-white hover:bg-red-700" : "bg-slate-900 text-white hover:bg-slate-700");
+  da.disabled = n === 0;
 }
 
 function statusSelect(c) {
@@ -170,6 +188,9 @@ function renderList() {
   $("list").innerHTML = contacts.map((c) => {
     const drafted = c.status !== "to_send";
     const when = c.contacted_at ? c.contacted_at.slice(0, 10) : "";
+    const actLabel = sendMode ? (drafted ? "Re-send" : "Send") : (drafted ? "Re-draft" : "Create draft");
+    const actCls = sendMode ? "bg-red-600 text-white hover:bg-red-700"
+      : (drafted ? "bg-slate-100 text-slate-600" : "bg-slate-900 text-white hover:bg-slate-700");
     const ig = c.instagram ? `<a href="${esc(linkify(c.instagram))}" target="_blank" rel="noopener" title="Instagram" class="text-pink-500 shrink-0">◎</a>` : "";
     const fb = c.facebook ? `<a href="${esc(linkify(c.facebook))}" target="_blank" rel="noopener" title="Facebook" class="text-blue-600 shrink-0">f</a>` : "";
     return `<div class="bg-white rounded-xl border border-slate-200 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -186,8 +207,8 @@ function renderList() {
       <div class="flex items-center gap-2 flex-wrap">
         ${statusSelect(c)}
         <button data-action="draft" data-email="${esc(c.email)}"
-          class="text-xs ${drafted ? "bg-slate-100 text-slate-600" : "bg-slate-900 text-white hover:bg-slate-700"} px-3 py-2 rounded-lg">
-          ${drafted ? "Re-draft" : "Create draft"}
+          class="text-xs px-3 py-2 rounded-lg ${actCls}">
+          ${actLabel}
         </button>
         <button data-action="delete" data-email="${esc(c.email)}" title="Delete" class="px-2 py-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50">🗑</button>
       </div>
@@ -252,7 +273,8 @@ async function findBusinesses() {
   btn.disabled = true; btn.textContent = "Searching…";
   $("scrapeOut").innerHTML = `<div class="text-sm text-slate-500 px-1">Finding businesses and scraping their sites… this can take 10–30s.</div>`;
   try {
-    const res = await api("/api/find", "POST", { category, area, max_results: $("findMax").value });
+    const max_results = Math.min(60, Math.max(1, parseInt($("findMax").value, 10) || 20));
+    const res = await api("/api/find", "POST", { category, area, max_results });
     if (res && res.error) $("scrapeOut").innerHTML = `<div class="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">${esc(res.error)}</div>`;
     else { scraped = res; renderScraped(); }
   } catch (e) {
@@ -292,18 +314,23 @@ async function addSingle() {
 
 async function createDraft(email, btn) {
   if (btn) { btn.disabled = true; btn.textContent = "…"; }
-  const res = await api("/api/draft", "POST", { email });
-  if (res.error) { alert("Couldn't create draft:\n" + res.error); }
+  const res = await api("/api/draft", "POST", { email, send: sendMode });
+  if (res.error) alert((sendMode ? "Couldn't send:\n" : "Couldn't create draft:\n") + res.error);
   else { const i = contacts.findIndex((c) => c.email === email); if (i >= 0) contacts[i] = res.contact; }
   renderStats(); renderList();
 }
 
 async function draftAll() {
-  if (!confirm('Create a Gmail draft for every "to send" business?')) return;
-  $("draftAll").disabled = true; $("draftAll").textContent = "Creating drafts…";
-  const res = await api("/api/draft-all", "POST", {});
-  if (res.error) alert("Couldn't create drafts:\n" + res.error);
-  else { contacts = res.contacts; if (res.errors && res.errors.length) alert(res.errors.length + " draft(s) failed; the rest were created."); }
+  const n = contacts.filter((c) => c.status === "to_send" && c.email).length;
+  if (!n) return;
+  const msg = sendMode
+    ? `Send the email immediately to all ${n} "to send" businesses? This can't be undone.`
+    : `Create a Gmail draft for all ${n} "to send" businesses?`;
+  if (!confirm(msg)) return;
+  $("draftAll").disabled = true; $("draftAll").textContent = sendMode ? "Sending…" : "Creating drafts…";
+  const res = await api("/api/draft-all", "POST", { send: sendMode });
+  if (res.error) alert("Error:\n" + res.error);
+  else { contacts = res.contacts; if (res.errors && res.errors.length) alert(res.errors.length + " failed; the rest went through."); }
   renderStats(); renderList();
 }
 
@@ -335,6 +362,23 @@ $("findBizBtn").onclick = findBusinesses;
 $("bulkBtn").onclick = importBulk;
 $("singleBtn").onclick = addSingle;
 $("draftAll").onclick = draftAll;
+$("sendToggle").addEventListener("click", () => {
+  sendMode = !sendMode;
+  $("sendToggle").setAttribute("aria-checked", String(sendMode));
+  $("sendToggle").className = "relative w-12 h-7 rounded-full transition shrink-0 " + (sendMode ? "bg-red-500" : "bg-slate-300");
+  $("sendKnob").className = "absolute left-0.5 top-0.5 w-6 h-6 bg-white rounded-full shadow transition " + (sendMode ? "translate-x-5" : "");
+  updateModeUI();
+});
+
+function updateModeUI() {
+  const hint = $("modeHint");
+  hint.textContent = sendMode
+    ? "⚠ Send mode — clicking Send emails the business immediately, no review."
+    : "Draft mode — creates a Gmail draft for you to review before sending.";
+  hint.className = "text-xs mt-0.5 " + (sendMode ? "text-red-600 font-medium" : "text-slate-400");
+  renderStats();
+  renderList();
+}
 
 // template edit toggle
 function tplMode(edit) {
