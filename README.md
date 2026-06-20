@@ -1,14 +1,20 @@
-# Videography Outreach Mailer
+# Outreach Toolkit
 
-A small Python tool that sends personalised outreach emails to local businesses
-via your Gmail account. Built for offering free portfolio videography work.
+Two ways to send free-shoot outreach to local businesses from your Gmail account:
 
-**Safe by default:** running it with no flags does a *dry run* — it prints every
-email it *would* send and sends nothing. You must add `--send` to deliver mail.
+1. **Web app (recommended)** — *Photography Outreach Manager*. Paste a batch of
+   website links, auto-scrape each business's email + Instagram + Facebook, review
+   the list, and create a **Gmail draft** for each with one click. Tracks who you've
+   contacted and when in `contacts.csv`. → [Web app](#web-app)
+2. **Command-line sender** — the original `send_outreach.py`: reads `businesses.csv`
+   and sends a templated email directly (dry-run by default).
+   → [Command-line sender](#command-line-sender)
+
+Both use your Gmail account and share the one-time Gmail API setup below.
 
 ---
 
-## What you do once (≈20–30 min)
+## One-time setup (≈20–30 min)
 
 ### 1. Install Python deps
 From this folder:
@@ -22,65 +28,92 @@ pip install -r requirements.txt
 1. Go to https://console.cloud.google.com/ and create a project (any name).
 2. In the search bar, open **Gmail API** and click **Enable**.
 3. Go to **APIs & Services → OAuth consent screen**. Choose **External**, fill in
-   the app name and your email, and add yourself as a **Test user**. (You can keep
-   it in "Testing" mode — no Google review needed for personal use.)
+   the app name and your email, and add yourself as a **Test user**. (Keep it in
+   "Testing" mode — no Google review needed for personal use.)
 4. Go to **APIs & Services → Credentials → Create credentials → OAuth client ID**.
    Choose **Desktop app**. Download the JSON.
 5. Rename that file to **`credentials.json`** and put it in this folder.
 
 > `credentials.json` and the `token.json` created on first run are secrets.
-> They are already in `.gitignore` — never commit them.
-
-### 3. Fill in your recipients
-Edit `businesses.csv`. Columns:
-- `business_name` (required)
-- `email` (required)
-- `contact_name` (optional — blank becomes "there")
-- `personal_note` (optional — a specific detail that makes the email feel real)
-
-### 4. Edit the template
-Open `email_template.txt` and replace `[your phone]` and `[your website or
-Instagram]` with your real details. Tweak the wording however you like. The first
-`Subject:` line is the subject; everything below is the body. Placeholders in
-`{curly_braces}` are filled from the CSV columns.
+> They're in `.gitignore` — never commit them.
 
 ---
 
-## Running it
+## Web app
+
+*Photography Outreach Manager* — a local browser app, and the fastest way to use this.
+
+**Run it:**
+```bash
+.venv/bin/python app.py
+```
+Then open **http://127.0.0.1:5050** (set `PORT=8000` etc. to change the port).
+
+**What it does**
+- **From websites** — paste a batch of site links (one per line); it scrapes each
+  business's name, email, Instagram and Facebook. Review/edit the results, then add
+  them to your list.
+- **Bulk paste / Single** — add contacts from `Name, email` lines or one at a time.
+- **Create draft** — one click puts a ready-to-send email in your **Gmail Drafts**
+  for you to review and send. Nothing sends automatically.
+- **Tracking** — everything is saved to `contacts.csv` with a status
+  (*To send / Drafted / Sent / Replied*) and the time a draft was created. Re-adding
+  the same email is skipped, so your list never doubles up.
+
+The first time you click **Create draft**, a browser opens to authorise Gmail. This
+upgrades the permission to "create drafts" (the CLI uses send-only), so you'll
+re-consent once. The email wording lives in `email_template.txt` and is editable
+right in the app.
+
+> The free scraper reads each site's own pages for a published email and social
+> links. Some businesses hide their email behind a contact form — for those, just
+> type the address into the review row before adding.
+
+---
+
+## Command-line sender
+
+The original tool. Sends the `email_template.txt` message directly to everyone in
+`businesses.csv`. **Safe by default:** with no flags it does a *dry run* — prints
+every email it *would* send and sends nothing. You must add `--send` to deliver.
 
 ```bash
 python send_outreach.py            # DRY RUN — prints every email, sends nothing
-python send_outreach.py --send     # actually send (browser asks you to log in once)
+python send_outreach.py --send     # actually send
 python send_outreach.py --send --limit 10   # send at most 10 this run
 ```
 
-On the first `--send`, a browser window opens for you to authorise your Google
-account. After that a `token.json` is saved and you won't be asked again.
+Fill in `businesses.csv` first. Columns: `business_name`, `email`, `contact_name`
+(optional), `personal_note` (optional). Placeholders in `{curly_braces}` in the
+template are filled from these columns.
 
 ### Built-in guardrails
 - **Daily cap** of 30 emails (`DAILY_CAP` in the script) to protect deliverability.
 - **Throttle** of 45–90s between sends so it doesn't look like a blast.
-- **Dedup**: everyone successfully emailed is recorded in `sent_log.csv` and
-  skipped on future runs, so re-running is always safe.
+- **Dedup**: everyone successfully emailed is recorded in `sent_log.csv` and skipped
+  on future runs, so re-running is always safe.
 
 ---
 
 ## A note on the law (you're in Australia)
-The Spam Act 2003 applies to commercial emails. This tool is set up to comply:
-it identifies you and includes an unsubscribe line. To stay on the right side of
-it, only email businesses whose contact address is **publicly listed**, keep
-volumes modest, and honour any "unsubscribe" reply immediately (remove them from
-the CSV / mark them in the log). This isn't legal advice — when in doubt, check
-the ACMA guidance on commercial electronic messages.
+The Spam Act 2003 applies to commercial emails. Only email businesses whose contact
+address is **publicly listed**, keep volumes modest, and honour any "unsubscribe"
+reply immediately. This isn't legal advice — when in doubt, check the ACMA guidance
+on commercial electronic messages.
 
 ---
 
 ## Files
 | File | What it is |
 |------|------------|
-| `send_outreach.py` | the mailer |
-| `email_template.txt` | subject + body with `{placeholders}` |
-| `businesses.csv` | your recipient list |
+| `app.py` | the web app (Photography Outreach Manager) |
+| `scraper.py` | free website contact scraper (email + socials) |
+| `gmail_client.py` | Gmail auth + draft creation |
+| `index.html` | the web app's browser UI |
+| `contacts.csv` | the web app's business list + status (auto-created, gitignored) |
+| `send_outreach.py` | the command-line sender |
+| `businesses.csv` | recipient list for the CLI sender |
+| `email_template.txt` | subject + body, shared by both tools |
 | `requirements.txt` | Python dependencies |
-| `sent_log.csv` | auto-created record of sends (gitignored) |
+| `sent_log.csv` | CLI send record (auto-created, gitignored) |
 | `credentials.json` / `token.json` | your Gmail secrets (gitignored, you provide) |

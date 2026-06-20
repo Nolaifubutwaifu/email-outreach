@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photography Outreach Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    [x-cloak]{display:none}
+    body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-3xl mx-auto p-4 sm:p-6">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 mb-1">
+      <div class="bg-indigo-600 text-white p-2 rounded-xl text-xl leading-none">✉️</div>
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Photography Outreach Manager</h1>
+        <p class="text-sm text-slate-500">Scrape businesses, review, and create Gmail drafts to send.</p>
+      </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div id="stats" class="grid grid-cols-4 gap-2 my-4"></div>
+
+    <!-- Template -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-semibold text-sm text-slate-700">Email template</h2>
+        <div>
+          <button id="tplEdit" class="text-xs text-slate-500 hover:text-slate-800">✎ Edit</button>
+          <button id="tplSave" class="hidden text-xs bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-indigo-700">Save</button>
+          <button id="tplCancel" class="hidden text-xs text-slate-500 hover:text-slate-800 ml-1">Cancel</button>
+        </div>
+      </div>
+      <div class="text-xs text-slate-400 mb-1">Subject</div>
+      <div id="tplSubjectView" class="text-sm font-medium text-slate-800 mb-3 bg-slate-50 rounded-lg px-3 py-2"></div>
+      <input id="tplSubjectEdit" class="hidden w-full border border-slate-200 rounded-lg px-3 py-2 text-sm mb-3" />
+      <div class="text-xs text-slate-400 mb-1">Body</div>
+      <div id="tplBodyView" class="text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2 whitespace-pre-wrap leading-relaxed max-h-44 overflow-y-auto"></div>
+      <textarea id="tplBodyEdit" rows="12" class="hidden w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono leading-relaxed"></textarea>
+    </div>
+
+    <!-- Add businesses -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
+      <div class="flex items-center gap-1.5 mb-3" id="tabs">
+        <button data-tab="website" class="tab text-xs px-3 py-1.5 rounded-lg font-medium">From websites</button>
+        <button data-tab="bulk" class="tab text-xs px-3 py-1.5 rounded-lg font-medium">Bulk paste</button>
+        <button data-tab="single" class="tab text-xs px-3 py-1.5 rounded-lg font-medium">Single</button>
+      </div>
+
+      <!-- From websites -->
+      <div data-panel="website">
+        <textarea id="urls" rows="5" placeholder="Paste website links, one per line, e.g.&#10;sunrisecafe.com.au&#10;greenyoga.com.au&#10;northshorebarbers.com.au"
+          class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono"></textarea>
+        <button id="findBtn" class="mt-2 flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          🔍 Find details
+        </button>
+        <p class="text-xs text-slate-400 mt-2">Pulls each business's publicly listed email + social links. Scraping takes a few seconds per site. Always double-check before sending.</p>
+        <div id="scrapeOut" class="mt-3"></div>
+      </div>
+
+      <!-- Bulk paste -->
+      <div data-panel="bulk" class="hidden">
+        <textarea id="bulk" rows="5" placeholder="One per line: Name, email&#10;Sunrise Cafe, hello@sunrisecafe.com&#10;Green Yoga, info@greenyoga.com.au"
+          class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono"></textarea>
+        <button id="bulkBtn" class="mt-2 flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-indigo-700">＋ Import list</button>
+      </div>
+
+      <!-- Single -->
+      <div data-panel="single" class="hidden">
+        <div class="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
+          <input id="sBiz" placeholder="Business name" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          <input id="sEmail" placeholder="Email address" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          <button id="singleBtn" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700">＋ Add</button>
+          <input id="sNote" placeholder="Optional note" class="sm:col-span-3 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk actions -->
+    <div class="flex items-center justify-between mb-2">
+      <button id="draftAll" class="text-xs bg-slate-900 text-white px-3 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50">
+        Create drafts for all "to send"
+      </button>
+      <a href="https://mail.google.com/mail/u/0/#drafts" target="_blank" rel="noopener" class="text-xs text-indigo-600 hover:underline">Open Gmail Drafts ↗</a>
+    </div>
+
+    <!-- List -->
+    <div id="list" class="space-y-2"></div>
+
+    <p class="text-xs text-slate-400 mt-6 leading-relaxed">
+      "Create draft" puts a ready-to-send email in your Gmail Drafts for you to review and send — nothing sends automatically.
+      Your list is saved locally in <code>contacts.csv</code>.
+    </p>
+  </div>
+
+<script>
+const STATUS = {
+  to_send: { label: "To send", cls: "bg-slate-100 text-slate-600", dot: "bg-slate-400" },
+  drafted: { label: "Drafted", cls: "bg-indigo-100 text-indigo-700", dot: "bg-indigo-500" },
+  sent:    { label: "Sent",    cls: "bg-amber-100 text-amber-700",  dot: "bg-amber-500" },
+  replied: { label: "Replied", cls: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500" },
+};
+
+let contacts = [];
+let scraped = [];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => (s || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const linkify = (u) => (u && (/^https?:\/\//.test(u) ? u : "https://" + u)) || "";
+
+async function api(path, method = "GET", data) {
+  const opt = { method, headers: { "Content-Type": "application/json" } };
+  if (data !== undefined) opt.body = JSON.stringify(data);
+  const res = await fetch(path, opt);
+  return res.json();
+}
+
+// ---- render ----------------------------------------------------------------
+function renderStats() {
+  const c = {
+    all: contacts.length,
+    to_send: contacts.filter((x) => x.status === "to_send").length,
+    drafted: contacts.filter((x) => x.status === "drafted").length,
+    replied: contacts.filter((x) => x.status === "replied").length,
+  };
+  const cards = [["all","Total"],["to_send","To send"],["drafted","Drafted"],["replied","Replied"]];
+  $("stats").innerHTML = cards.map(([k,l]) =>
+    `<div class="rounded-xl p-3 bg-white border border-slate-200">
+       <div class="text-lg font-bold text-slate-900 leading-none">${c[k]}</div>
+       <div class="text-xs text-slate-500 mt-1">${l}</div>
+     </div>`).join("");
+  const n = c.to_send;
+  $("draftAll").textContent = `Create drafts for all "to send"` + (n ? ` (${n})` : "");
+  $("draftAll").disabled = n === 0;
+}
+
+function statusSelect(c) {
+  return `<select data-action="status" data-email="${esc(c.email)}"
+            class="text-xs rounded-lg px-2 py-1.5 border-0 cursor-pointer ${STATUS[c.status]?.cls || ""}">
+    ${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${k===c.status?"selected":""}>${v.label}</option>`).join("")}
+  </select>`;
+}
+
+function renderList() {
+  if (!contacts.length) { $("list").innerHTML = `<div class="text-center text-slate-400 text-sm py-10">No businesses yet — add some above.</div>`; return; }
+  $("list").innerHTML = contacts.map((c) => {
+    const drafted = c.status !== "to_send";
+    const when = c.contacted_at ? c.contacted_at.slice(0, 10) : "";
+    const ig = c.instagram ? `<a href="${esc(linkify(c.instagram))}" target="_blank" rel="noopener" title="Instagram" class="text-pink-500 shrink-0">◎</a>` : "";
+    const fb = c.facebook ? `<a href="${esc(linkify(c.facebook))}" target="_blank" rel="noopener" title="Facebook" class="text-blue-600 shrink-0">f</a>` : "";
+    return `<div class="bg-white rounded-xl border border-slate-200 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full ${STATUS[c.status]?.dot || "bg-slate-300"}"></span>
+          <span class="font-medium text-slate-900 truncate">${esc(c.business_name)}</span>
+          ${ig} ${fb}
+        </div>
+        <div class="text-sm text-slate-500 truncate">${esc(c.email)}</div>
+        ${c.note ? `<div class="text-xs text-slate-400 mt-0.5 truncate">${esc(c.note)}</div>` : ""}
+        ${when ? `<div class="text-xs text-indigo-500 mt-0.5">Drafted ${esc(when)}</div>` : ""}
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        ${statusSelect(c)}
+        <button data-action="draft" data-email="${esc(c.email)}"
+          class="text-xs ${drafted ? "bg-slate-100 text-slate-600" : "bg-slate-900 text-white hover:bg-slate-700"} px-3 py-2 rounded-lg">
+          ${drafted ? "Re-draft" : "Create draft"}
+        </button>
+        <button data-action="delete" data-email="${esc(c.email)}" title="Delete" class="px-2 py-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50">🗑</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ---- scrape preview --------------------------------------------------------
+function renderScraped() {
+  if (!scraped.length) { $("scrapeOut").innerHTML = ""; return; }
+  const rows = scraped.map((r, i) => `
+    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50 mb-2" data-i="${i}">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs ${r.email ? "text-emerald-700" : "text-amber-700"}">${r.email ? "✓ " : "⚠ "}${esc(r.note)}</span>
+        <button data-action="drop" data-i="${i}" class="text-xs text-slate-400 hover:text-red-500">remove</button>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-2">
+        <input data-f="business_name" data-i="${i}" value="${esc(r.business_name)}" placeholder="Business name" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        <input data-f="email" data-i="${i}" value="${esc(r.email)}" placeholder="Email address" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        <input data-f="instagram" data-i="${i}" value="${esc(r.instagram)}" placeholder="Instagram URL" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        <input data-f="facebook" data-i="${i}" value="${esc(r.facebook)}" placeholder="Facebook URL" class="border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+      </div>
+    </div>`).join("");
+  const withEmail = scraped.filter((r) => r.email.trim()).length;
+  $("scrapeOut").innerHTML = rows +
+    `<button id="addAll" class="mt-1 bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50" ${withEmail?"":"disabled"}>
+       ＋ Add ${withEmail} to list
+     </button>
+     <span class="text-xs text-slate-400 ml-2">Rows without an email are skipped.</span>`;
+  $("addAll").onclick = addAll;
+}
+
+// ---- actions ---------------------------------------------------------------
+async function load() {
+  contacts = await api("/api/contacts");
+  const t = await api("/api/template");
+  $("tplSubjectView").textContent = t.subject;
+  $("tplBodyView").textContent = t.body;
+  $("tplSubjectEdit").value = t.subject;
+  $("tplBodyEdit").value = t.body;
+  renderStats(); renderList();
+}
+
+async function findDetails() {
+  const urls = $("urls").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!urls.length) return;
+  $("findBtn").disabled = true; $("findBtn").textContent = "Searching…";
+  try {
+    scraped = await api("/api/scrape", "POST", { urls });
+    renderScraped();
+  } catch (e) {
+    $("scrapeOut").innerHTML = `<div class="text-sm text-amber-700">Something went wrong scraping. Check the links and try again.</div>`;
+  }
+  $("findBtn").disabled = false; $("findBtn").textContent = "🔍 Find details";
+}
+
+async function addAll() {
+  const payload = scraped.filter((r) => r.email.trim());
+  if (!payload.length) return;
+  const res = await api("/api/contacts", "POST", { contacts: payload });
+  contacts = res.contacts; scraped = []; $("urls").value = "";
+  renderScraped(); renderStats(); renderList();
+}
+
+async function importBulk() {
+  const re = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+  const list = $("bulk").value.split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
+    const m = line.match(re); if (!m) return null;
+    const email = m[0];
+    const name = line.replace(email, "").replace(/[<>,;|\t]+/g, " ").trim() || "(no name)";
+    return { business_name: name, email };
+  }).filter(Boolean);
+  if (!list.length) return;
+  const res = await api("/api/contacts", "POST", { contacts: list });
+  contacts = res.contacts; $("bulk").value = "";
+  renderStats(); renderList();
+}
+
+async function addSingle() {
+  const email = $("sEmail").value.trim(); if (!email) return;
+  const res = await api("/api/contacts", "POST", { contacts: [{ business_name: $("sBiz").value.trim(), email, note: $("sNote").value.trim() }] });
+  contacts = res.contacts; $("sBiz").value = $("sEmail").value = $("sNote").value = "";
+  renderStats(); renderList();
+}
+
+async function createDraft(email, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "…"; }
+  const res = await api("/api/draft", "POST", { email });
+  if (res.error) { alert("Couldn't create draft:\n" + res.error); }
+  else { const i = contacts.findIndex((c) => c.email === email); if (i >= 0) contacts[i] = res.contact; }
+  renderStats(); renderList();
+}
+
+async function draftAll() {
+  if (!confirm('Create a Gmail draft for every "to send" business?')) return;
+  $("draftAll").disabled = true; $("draftAll").textContent = "Creating drafts…";
+  const res = await api("/api/draft-all", "POST", {});
+  if (res.error) alert("Couldn't create drafts:\n" + res.error);
+  else { contacts = res.contacts; if (res.errors && res.errors.length) alert(res.errors.length + " draft(s) failed; the rest were created."); }
+  renderStats(); renderList();
+}
+
+async function setStatus(email, status) {
+  await api("/api/status", "POST", { email, status });
+  const i = contacts.findIndex((c) => c.email === email); if (i >= 0) contacts[i].status = status;
+  renderStats(); renderList();
+}
+
+async function del(email) {
+  if (!confirm("Remove this business from the list?")) return;
+  await api("/api/delete", "POST", { email });
+  contacts = contacts.filter((c) => c.email !== email);
+  renderStats(); renderList();
+}
+
+// ---- wiring ----------------------------------------------------------------
+function setTab(name) {
+  document.querySelectorAll(".tab").forEach((b) => {
+    const on = b.dataset.tab === name;
+    b.className = "tab text-xs px-3 py-1.5 rounded-lg font-medium " + (on ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100");
+  });
+  document.querySelectorAll("[data-panel]").forEach((p) => p.classList.toggle("hidden", p.dataset.panel !== name));
+}
+
+$("tabs").addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) setTab(b.dataset.tab); });
+$("findBtn").onclick = findDetails;
+$("bulkBtn").onclick = importBulk;
+$("singleBtn").onclick = addSingle;
+$("draftAll").onclick = draftAll;
+
+// template edit toggle
+function tplMode(edit) {
+  ["tplSubjectView","tplBodyView","tplEdit"].forEach((id) => $(id).classList.toggle("hidden", edit));
+  ["tplSubjectEdit","tplBodyEdit","tplSave","tplCancel"].forEach((id) => $(id).classList.toggle("hidden", !edit));
+}
+$("tplEdit").onclick = () => tplMode(true);
+$("tplCancel").onclick = () => { $("tplSubjectEdit").value = $("tplSubjectView").textContent; $("tplBodyEdit").value = $("tplBodyView").textContent; tplMode(false); };
+$("tplSave").onclick = async () => {
+  const t = await api("/api/template", "POST", { subject: $("tplSubjectEdit").value, body: $("tplBodyEdit").value });
+  $("tplSubjectView").textContent = t.subject; $("tplBodyView").textContent = t.body; tplMode(false);
+};
+
+// list + scrape event delegation
+$("list").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-action]"); if (!b) return;
+  const email = b.dataset.email;
+  if (b.dataset.action === "draft") createDraft(email, b);
+  else if (b.dataset.action === "delete") del(email);
+});
+$("list").addEventListener("change", (e) => {
+  const s = e.target.closest('[data-action="status"]'); if (s) setStatus(s.dataset.email, s.value);
+});
+$("scrapeOut").addEventListener("click", (e) => {
+  const b = e.target.closest('[data-action="drop"]'); if (b) { scraped.splice(+b.dataset.i, 1); renderScraped(); }
+});
+$("scrapeOut").addEventListener("input", (e) => {
+  const f = e.target.dataset.f; if (f) scraped[+e.target.dataset.i][f] = e.target.value;
+});
+
+setTab("website");
+load();
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ token.json
 
 # Run output
 sent_log.csv
+contacts.csv
 
 # Local test scratch (your own email — don't commit)
 test.csv
