@@ -1,6 +1,7 @@
 # Secrets — NEVER commit these
 credentials.json
 token.json
+places_api_key.txt
 
 # Run output
 sent_log.csv

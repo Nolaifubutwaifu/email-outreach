@@ -8,6 +8,7 @@ nothing is invented.
 """
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin, urlparse
 
 import requests
@@ -132,3 +133,12 @@ def scrape_site(url):
 
     out["note"] = "found email" if out["email"] else "no public email found - add manually"
     return out
+
+
+def scrape_many(urls, workers=8):
+    """Scrape several URLs in parallel; results stay in the same order as urls."""
+    urls = list(urls)
+    if not urls:
+        return []
+    with ThreadPoolExecutor(max_workers=min(workers, len(urls))) as pool:
+        return list(pool.map(scrape_site, urls))

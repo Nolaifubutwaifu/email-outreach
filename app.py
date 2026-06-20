@@ -24,6 +24,7 @@ from flask import Flask, request, jsonify
 
 import scraper
 import gmail_client
+import places
 
 CONTACTS_FILE = "contacts.csv"
 TEMPLATE_FILE = "email_template.txt"
@@ -123,15 +124,42 @@ def api_scrape():
     urls = d.get("urls", [])
     if isinstance(urls, str):
         urls = urls.splitlines()
-    results, seen = [], set()
+    cleaned, seen = [], set()
     for u in urls:
         u = (u or "").strip()
         if not u or u.lower() in seen:
             continue
         seen.add(u.lower())
-        results.append(scraper.scrape_site(u))
-        if len(results) >= MAX_URLS_PER_BATCH:
+        cleaned.append(u)
+        if len(cleaned) >= MAX_URLS_PER_BATCH:
             break
+    return jsonify(scraper.scrape_many(cleaned))
+
+
+@app.post("/api/find")
+def api_find():
+    """Find businesses via Google Places, then scrape each site for an email."""
+    d = request.get_json(force=True) or {}
+    try:
+        businesses = places.search_businesses(
+            d.get("category", ""), d.get("area", ""), d.get("max_results", 20)
+        )
+    except Exception as e:  # noqa: BLE001 - surface config errors to the UI
+        return jsonify({"error": str(e)}), 400
+
+    scraped = scraper.scrape_many([b.get("url", "") for b in businesses])
+    results = []
+    for b, s in zip(businesses, scraped):
+        s = s or {}
+        note = " · ".join(x for x in [b.get("address", ""), b.get("phone", "")] if x)
+        results.append({
+            "url": b.get("url", "") or s.get("url", ""),
+            "business_name": b.get("business_name") or s.get("business_name", ""),
+            "email": s.get("email", ""),
+            "instagram": s.get("instagram", ""),
+            "facebook": s.get("facebook", ""),
+            "note": note or s.get("note", ""),
+        })
     return jsonify(results)
 
 

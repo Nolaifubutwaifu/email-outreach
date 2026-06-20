@@ -69,6 +69,26 @@ right in the app.
 > links. Some businesses hide their email behind a contact form — for those, just
 > type the address into the review row before adding.
 
+### Find businesses with Google Places (optional)
+
+The **Find businesses** tab pulls a batch of businesses + their websites for an
+area/category from Google Places, then scrapes each site for the email — so you go
+from "a suburb + a category" straight to a list of leads. One-time setup:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/) (same project as
+   your Gmail credentials), open **APIs & Services → Library**, search
+   **Places API (New)**, and **Enable** it.
+2. Turn on **billing**: **Billing → link a billing account** (add a card). Required
+   even though normal personal use stays inside Google's free monthly tier.
+3. **APIs & Services → Credentials → Create credentials → API key.** Copy the key.
+   (Recommended: edit the key → **Restrict key → Places API (New)**.)
+4. Paste the key into a file called **`places_api_key.txt`** in this folder
+   (it's gitignored), or set the `GOOGLE_MAPS_API_KEY` environment variable.
+
+Then restart the app. Google Places only returns name/website/phone/address — the
+email always comes from scraping the business's own site, so leads with no website
+(or no published email) will need the address typed in by hand.
+
 ---
 
 ## Command-line sender
@@ -108,6 +128,7 @@ on commercial electronic messages.
 |------|------------|
 | `app.py` | the web app (Photography Outreach Manager) |
 | `scraper.py` | free website contact scraper (email + socials) |
+| `places.py` | find businesses via Google Places (New) |
 | `gmail_client.py` | Gmail auth + draft creation |
 | `index.html` | the web app's browser UI |
 | `contacts.csv` | the web app's business list + status (auto-created, gitignored) |
@@ -117,3 +138,4 @@ on commercial electronic messages.
 | `requirements.txt` | Python dependencies |
 | `sent_log.csv` | CLI send record (auto-created, gitignored) |
 | `credentials.json` / `token.json` | your Gmail secrets (gitignored, you provide) |
+| `places_api_key.txt` | your Google Places API key (gitignored, you provide) |
