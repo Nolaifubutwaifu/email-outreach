@@ -1,6 +1,12 @@
 # Outreach Toolkit
 
-Two ways to send free-shoot outreach to local businesses from your Gmail account:
+> **Sending account:** every email from this project is always sent from
+> **maximilianumschaden@gmail.com**. That is the only account this toolkit uses —
+> the Gmail credentials, drafts, and sent mail all belong to it. No other address
+> is involved in this project.
+
+Two ways to send free-shoot outreach to local businesses from your Gmail account
+(**maximilianumschaden@gmail.com**):
 
 1. **Web app (recommended)** — *Photography Outreach Manager*. Paste a batch of
    website links, auto-scrape each business's email + Instagram + Facebook, review
@@ -28,8 +34,11 @@ pip install -r requirements.txt
 1. Go to https://console.cloud.google.com/ and create a project (any name).
 2. In the search bar, open **Gmail API** and click **Enable**.
 3. Go to **APIs & Services → OAuth consent screen**. Choose **External**, fill in
-   the app name and your email, and add yourself as a **Test user**. (Keep it in
-   "Testing" mode — no Google review needed for personal use.)
+   the app name and use **maximilianumschaden@gmail.com**, and add that same
+   address as a **Test user**. (Keep it in "Testing" mode — no Google review
+   needed for personal use.) Always authorise as
+   **maximilianumschaden@gmail.com** when the browser opens on first run — that is
+   the account mail is sent from.
 4. Go to **APIs & Services → Credentials → Create credentials → OAuth client ID**.
    Choose **Desktop app**. Download the JSON.
 5. Rename that file to **`credentials.json`** and put it in this folder.
