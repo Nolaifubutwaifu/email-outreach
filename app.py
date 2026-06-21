@@ -2,7 +2,7 @@
 """
 app.py - Photography Outreach Manager (local web app).
 
-Mirrors the outreach-tool.tsx artifact, backed by local files + the Gmail API:
+Backed by local files + the Gmail API:
 
   * Paste a batch of website URLs -> scrape business name, email, Instagram and
     Facebook (free, no API key) -> review -> save to contacts.csv
