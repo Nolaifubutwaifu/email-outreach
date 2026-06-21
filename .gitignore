@@ -3,12 +3,8 @@ credentials.json
 token.json
 places_api_key.txt
 
-# Run output
-sent_log.csv
+# Run output (auto-created)
 contacts.csv
-
-# Local test scratch (your own email — don't commit)
-test.csv
 
 # Python
 __pycache__/

@@ -6,7 +6,6 @@
   <title>Photography Outreach Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    [x-cloak]{display:none}
     body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   </style>
 </head>
@@ -126,7 +125,7 @@
     <div id="list" class="space-y-2"></div>
 
     <p class="text-xs text-slate-400 mt-6 leading-relaxed">
-      "Create draft" puts a ready-to-send email in your Gmail Drafts for you to review and send — nothing sends automatically.
+      In Draft mode, emails go to your Gmail Drafts to review before sending. Flip to Send mode to email immediately.
       Your list is saved locally in <code>contacts.csv</code>.
     </p>
   </div>
@@ -202,7 +201,7 @@ function renderList() {
         </div>
         <div class="text-sm text-slate-500 truncate">${esc(c.email)}</div>
         ${c.note ? `<div class="text-xs text-slate-400 mt-0.5 truncate">${esc(c.note)}</div>` : ""}
-        ${when ? `<div class="text-xs text-indigo-500 mt-0.5">Drafted ${esc(when)}</div>` : ""}
+        ${when ? `<div class="text-xs text-indigo-500 mt-0.5">${STATUS[c.status]?.label || "Contacted"} ${esc(when)}</div>` : ""}
       </div>
       <div class="flex items-center gap-2 flex-wrap">
         ${statusSelect(c)}

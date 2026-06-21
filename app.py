@@ -4,15 +4,16 @@ app.py - Photography Outreach Manager (local web app).
 
 Backed by local files + the Gmail API:
 
-  * Paste a batch of website URLs -> scrape business name, email, Instagram and
-    Facebook (free, no API key) -> review -> save to contacts.csv
-  * One click -> create a real Gmail DRAFT (in your Drafts) to review & send
-  * contacts.csv tracks each business's status and when a draft was created,
-    so already-contacted businesses are skipped
+  * Find businesses by area (Google Places) or paste website URLs, then scrape
+    each site for business name, email, Instagram and Facebook -> review ->
+    save to contacts.csv
+  * One click -> create a Gmail draft (or send directly, via the Send toggle)
+  * contacts.csv tracks each business's status and when it was contacted, so
+    already-contacted businesses are skipped
 
 Run:
   .venv/bin/python app.py
-then open http://127.0.0.1:5000
+then open http://127.0.0.1:5050
 """
 
 import csv
